@@ -56,13 +56,25 @@ public class Client {
   }
 
   public static void printResults(List<Boolean> wsResults, List<Boolean> ejbResults, Logger log) {
+    log.warn("Endpoint:    AAAAAAAAA BBBBBBBBB CCCCCCCCC DDDDDDDDD");
+    log.warn("Role: X=NONE AAABBBXXX AAABBBXXX AAABBBXXX AAABBBXXX");
+    log.warn("Method:      ABCABCABC ABCABCABC ABCABCABC ABCABCABC");
+    log.warn("====================================================");
     StringBuffer buffer = new StringBuffer("WS results:  ");
-    for(Boolean result : wsResults) {
+    for(int i=0; i<wsResults.size(); i++) {
+      if(i % 9 == 0 && i > 0) {
+        buffer.append(" ");
+      }
+      Boolean result = wsResults.get(i);
       buffer.append(result.booleanValue() ? "1" : "0");
     }
     log.warn(buffer.toString());
     buffer = new StringBuffer("EJB results: ");
-    for(Boolean result : ejbResults) {
+    for(int i=0; i<ejbResults.size(); i++) {
+      if(i % 9 == 0 && i > 0) {
+        buffer.append(" ");
+      }
+      Boolean result = ejbResults.get(i);
       buffer.append(result.booleanValue() ? "1" : "0");
     }
     log.warn(buffer.toString());
@@ -88,15 +100,16 @@ public class Client {
   }
 
   public List<Boolean> invokeEjb(String endpoint) throws Exception {
-    if(ctx == null) {
+    List<Boolean> results = new ArrayList<Boolean>();
+    for(Role role : Role.class.getEnumConstants()) {
       Properties p = new Properties();
       p.put("remote.connections", "default");
       p.put("remote.connection.default.host", "localhost");
       p.put("remote.connection.default.port", "4447");
       p.put("remote.connectionprovider.create.options.org.xnio.Options.SSL_ENABLED", "false");
       p.put("remote.connection.default.connect.options.org.xnio.Options.SASL_POLICY_NOANONYMOUS", "false");
-      p.put("remote.connection.default.connect.options.org.xnio.Options.SASL_POLICY_NOPLAINTEXT", "false");
-      p.put("remote.connection.default.username", "klape");
+      // p.put("remote.connection.default.connect.options.org.xnio.Options.SASL_POLICY_NOPLAINTEXT", "false");
+      p.put("remote.connection.default.username", role.getUser());
       p.put("remote.connection.default.password", "RedHat13#");
       Hashtable<String, String> env = new Hashtable<String, String>();
       env.put(Context.URL_PKG_PREFIXES, "org.jboss.ejb.client.naming");
@@ -104,18 +117,16 @@ public class Client {
       EJBClientConfiguration cc = new PropertiesBasedEJBClientConfiguration(p);
       ContextSelector<EJBClientContext> selector = new ConfigBasedEJBClientContextSelector(cc);
       EJBClientContext.setSelector(selector);
-      ctx = new InitialContext(env);
-    }
+      InitialContext ctx = new InitialContext(env);
 
-    List<Boolean> results = new ArrayList<Boolean>();
-    for(Role role : Role.class.getEnumConstants()) {
       log.info("");
       log.debug("================================================================================");
       log.debug("Invoking EJB " + endpoint.toUpperCase() + " with " + role.getUser());
       log.debug("================================================================================");
-      Object obj = ctx.lookup("ejb:/permiatAll//SecureEndpoint" + endpoint.toUpperCase() + "!com.redhat.gss.SecureEndpoint");
+      Object obj = ctx.lookup("ejb:/permitAll//SecureEndpoint" + endpoint.toUpperCase() + "!com.redhat.gss.SecureEndpoint");
       SecureEndpoint ejbObject = (SecureEndpoint) obj;
       results.addAll(invokeClient(ejbObject, role));
+      ctx.close();
     }
     return results;
   }
