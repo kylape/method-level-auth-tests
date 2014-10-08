@@ -7,11 +7,13 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import org.jboss.ws.api.annotation.WebContext;
 import org.jboss.security.annotation.SecurityDomain;
+import javax.annotation.security.DeclareRoles;
 
 @Stateless
 @Remote(SecureEndpoint.class)
 @WebService(endpointInterface="com.redhat.gss.SecureEndpoint")
 @SecurityDomain("other")
+// @DeclareRoles({"a","b"})
 @WebContext(contextRoot="/endpoint",urlPattern="/a",authMethod="BASIC")
 public class SecureEndpointA implements SecureEndpoint {
   @RolesAllowed({"a"})

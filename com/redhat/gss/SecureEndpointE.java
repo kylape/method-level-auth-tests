@@ -14,8 +14,9 @@ import javax.annotation.security.DeclareRoles;
 @WebService(endpointInterface="com.redhat.gss.SecureEndpoint")
 @SecurityDomain("other")
 // @DeclareRoles({"a","b"})
-@WebContext(contextRoot="/endpoint",urlPattern="/b",authMethod="BASIC")
-public class SecureEndpointB implements SecureEndpoint {
+@WebContext(contextRoot="/endpoint",urlPattern="/e",authMethod="BASIC")
+@RolesAllowed({"b"})
+public class SecureEndpointE implements SecureEndpoint {
   @RolesAllowed({"a"})
   public String a() {
     return "Success";
@@ -26,6 +27,7 @@ public class SecureEndpointB implements SecureEndpoint {
     return "Success";
   }
 
+  @PermitAll
   public String c() {
     return "Success";
   }

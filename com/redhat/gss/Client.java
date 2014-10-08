@@ -22,6 +22,8 @@ import java.util.ArrayList;
 
 public class Client {
 
+  private static final String[] endpoints = {"a","b","c","d","e"};
+  // private static final String[] endpoints = {"e"};
   public Logger log = Logger.getLogger("com.redhat.gss.Client");
   private InitialContext ctx = null;
 
@@ -43,7 +45,6 @@ public class Client {
     System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
     System.setProperty("logging.configuration", "file:/home/remote/klape/work/dev/support-examples/jaxws/permitAll.jar/logging.properties");
     Client client = new Client();
-    String[] endpoints = {"a","b","c","d"};
     List<Boolean> wsResults = new ArrayList<Boolean>();
     List<Boolean> ejbResults = new ArrayList<Boolean>();
     for(String endpoint : endpoints) {
@@ -56,10 +57,21 @@ public class Client {
   }
 
   public static void printResults(List<Boolean> wsResults, List<Boolean> ejbResults, Logger log) {
-    log.warn("Endpoint:    AAAAAAAAA BBBBBBBBB CCCCCCCCC DDDDDDDDD");
-    log.warn("Role: X=NONE AAABBBXXX AAABBBXXX AAABBBXXX AAABBBXXX");
-    log.warn("Method:      ABCABCABC ABCABCABC ABCABCABC ABCABCABC");
-    log.warn("====================================================");
+    StringBuffer endpointLine = new StringBuffer();
+    StringBuffer roleLine = new StringBuffer();
+    StringBuffer methodLine = new StringBuffer();
+    for(String endpoint : endpoints) {
+      for(int i=0; i<9; i++) {
+        endpointLine.append(endpoint.toUpperCase());
+      }
+      endpointLine.append(" ");
+      roleLine.append("AAABBBXXX ");
+      methodLine.append("ABCABCABC ");
+    }
+    log.warn("Endpoint:    " + endpointLine.toString());
+    log.warn("Role: X=NONE " + roleLine.toString());
+    log.warn("Method:      " + methodLine.toString());
+    log.warn("==============================================================");
     StringBuffer buffer = new StringBuffer("WS results:  ");
     for(int i=0; i<wsResults.size(); i++) {
       if(i % 9 == 0 && i > 0) {
