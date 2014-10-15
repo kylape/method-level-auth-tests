@@ -43,7 +43,7 @@ public class Client {
 
   public static void main(String[] args) throws Exception {
     System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
-    System.setProperty("logging.configuration", "file:/home/remote/klape/work/dev/support-examples/jaxws/permitAll.jar/logging.properties");
+    System.setProperty("logging.configuration", "file:/home/remote/klape/work/dev/maven-projects/method-level-auth-tests/logging.properties");
     Client client = new Client();
     List<Boolean> wsResults = new ArrayList<Boolean>();
     List<Boolean> ejbResults = new ArrayList<Boolean>();
@@ -133,7 +133,7 @@ public class Client {
       log.debug("================================================================================");
       log.debug("Invoking EJB " + endpoint.toUpperCase() + " with " + role.getUser());
       log.debug("================================================================================");
-      Object obj = ctx.lookup("ejb:/permitAll//SecureEndpoint" + endpoint.toUpperCase() + "!com.redhat.gss.SecureEndpoint");
+      Object obj = ctx.lookup("ejb:/endpoint//SecureEndpoint" + endpoint.toUpperCase() + "!com.redhat.gss.SecureEndpoint");
       SecureEndpoint ejbObject = (SecureEndpoint) obj;
       results.addAll(invokeClient(ejbObject, role));
       ctx.close();

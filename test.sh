@@ -5,4 +5,4 @@ if [ "x$JBOSS_HOME" == "x" ]; then
   exit 1
 fi
 
-java -cp $JBOSS_HOME/bin/client/jboss-client.jar:. com.redhat.gss.Client
+java -cp $JBOSS_HOME/bin/client/jboss-client.jar:target/test-classes:target/classes com.redhat.gss.Client

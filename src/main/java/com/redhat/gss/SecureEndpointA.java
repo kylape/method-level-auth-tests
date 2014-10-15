@@ -6,7 +6,7 @@ import javax.jws.WebService;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import org.jboss.ws.api.annotation.WebContext;
-import org.jboss.security.annotation.SecurityDomain;
+import org.jboss.ejb3.annotation.SecurityDomain;
 import javax.annotation.security.DeclareRoles;
 
 @Stateless

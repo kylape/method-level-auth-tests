@@ -3,11 +3,10 @@ package com.redhat.gss;
 import javax.ejb.Stateless;
 import javax.ejb.Remote;
 import javax.jws.WebService;
-import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import org.jboss.ws.api.annotation.WebContext;
-import org.jboss.security.annotation.SecurityDomain;
+import org.jboss.ejb3.annotation.SecurityDomain;
 import javax.annotation.security.DeclareRoles;
 
 @Stateless
@@ -15,9 +14,8 @@ import javax.annotation.security.DeclareRoles;
 @WebService(endpointInterface="com.redhat.gss.SecureEndpoint")
 @SecurityDomain("other")
 // @DeclareRoles({"a","b"})
-@WebContext(contextRoot="/endpoint",urlPattern="/c",authMethod="BASIC")
-@PermitAll
-public class SecureEndpointC implements SecureEndpoint {
+@WebContext(contextRoot="/endpoint",urlPattern="/b",authMethod="BASIC")
+public class SecureEndpointB implements SecureEndpoint {
   @RolesAllowed({"a"})
   public String a() {
     return "Success";
@@ -28,7 +26,6 @@ public class SecureEndpointC implements SecureEndpoint {
     return "Success";
   }
 
-  @PermitAll
   public String c() {
     return "Success";
   }

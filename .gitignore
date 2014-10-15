@@ -1,5 +1,4 @@
 *.log*
-dist/
+target/
 **/*.class
 tags
-META-INF/
