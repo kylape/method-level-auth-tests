@@ -2,6 +2,7 @@ package com.redhat.gss;
 
 import java.lang.Exception; //HUH?!? why is this necessary?!?
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Properties;
@@ -18,7 +19,6 @@ import org.jboss.ejb.client.EJBClientContext;
 import org.jboss.ejb.client.PropertiesBasedEJBClientConfiguration;
 import org.jboss.ejb.client.remoting.ConfigBasedEJBClientContextSelector;
 import org.jboss.logging.Logger;
-import java.util.ArrayList;
 
 public class Client {
 
@@ -105,7 +105,7 @@ public class Client {
       log.debug("================================================================================");
       ((BindingProvider)port).getRequestContext().put(BindingProvider.USERNAME_PROPERTY, role.getUser());
       ((BindingProvider)port).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, "RedHat13#");
-      results.addAll(invokeClient(port, role));
+      results.addAll(invokeClient(port, role, "b".equals(endpoint) ? false : true));
     }
     return results;
   }
@@ -135,13 +135,13 @@ public class Client {
       log.debug("================================================================================");
       Object obj = ctx.lookup("ejb:/endpoint//SecureEndpoint" + endpoint.toUpperCase() + "!com.redhat.gss.SecureEndpoint");
       SecureEndpoint ejbObject = (SecureEndpoint) obj;
-      results.addAll(invokeClient(ejbObject, role));
+      results.addAll(invokeClient(ejbObject, role, "b".equals(endpoint) ? false : true));
       ctx.close();
     }
     return results;
   }
 
-  public List<Boolean> invokeClient(SecureEndpoint e, Role role) {
+  public List<Boolean> invokeClient(SecureEndpoint e, Role role, boolean noRoleAllowed) {
     List<Boolean> results = new ArrayList<Boolean>(3);
     if(role == Role.A) {
       log.debug("Invoking a(). Expecting success.");
@@ -162,15 +162,7 @@ public class Client {
         log.debug("Failure");
         results.add(Boolean.FALSE);
       }
-      log.debug("Invoking c(). Expecting success.");
-      try {
-        e.c();
-        log.debug("Success");
-        results.add(Boolean.TRUE);
-      } catch(Exception ex) {
-        log.error("Unexpected Failure");
-        results.add(Boolean.FALSE);
-      }
+      invokeMethodC(e, results, noRoleAllowed);
     } else if(role == Role.B) {
       log.debug("Invoking a(). Expecting failure.");
       try {
@@ -190,15 +182,7 @@ public class Client {
         log.error("Unexpected Failure");
         results.add(Boolean.FALSE);
       }
-      log.debug("Invoking c(). Expecting success.");
-      try {
-        e.c();
-        log.debug("Success");
-        results.add(Boolean.TRUE);
-      } catch(Exception ex) {
-        log.error("Unexpected Failure");
-        results.add(Boolean.FALSE);
-      }
+      invokeMethodC(e, results, noRoleAllowed);
     } else if(role == Role.NONE) {
       log.debug("Invoking a(). Expecting failure.");
       try {
@@ -218,6 +202,13 @@ public class Client {
         log.debug("Failure");
         results.add(Boolean.FALSE);
       }
+      invokeMethodC(e, results, noRoleAllowed);
+    }
+    return results;
+  }
+
+  public void invokeMethodC(SecureEndpoint e, List<Boolean> results, boolean noRoleAllowed) {
+    if(noRoleAllowed) {
       log.debug("Invoking c(). Expecting success.");
       try {
         e.c();
@@ -227,7 +218,16 @@ public class Client {
         log.error("Unexpected Failure");
         results.add(Boolean.FALSE);
       }
+    } else {
+      log.debug("Invoking c(). Expecting failure.");
+      try {
+        e.c();
+        log.error("Unexpected Success");
+        results.add(Boolean.TRUE);
+      } catch(Exception ex) {
+        log.debug("Failure");
+        results.add(Boolean.FALSE);
+      }
     }
-    return results;
   }
 }
