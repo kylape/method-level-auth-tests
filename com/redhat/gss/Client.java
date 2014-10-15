@@ -100,7 +100,6 @@ public class Client {
 
     List<Boolean> results = new ArrayList<Boolean>();
     for(Role role : Role.class.getEnumConstants()) {
-      log.info("");
       log.debug("================================================================================");
       log.debug("Invoking webservice " + endpoint.toUpperCase() + " with " + role.getUser());
       log.debug("================================================================================");
@@ -131,7 +130,6 @@ public class Client {
       EJBClientContext.setSelector(selector);
       InitialContext ctx = new InitialContext(env);
 
-      log.info("");
       log.debug("================================================================================");
       log.debug("Invoking EJB " + endpoint.toUpperCase() + " with " + role.getUser());
       log.debug("================================================================================");
@@ -146,87 +144,87 @@ public class Client {
   public List<Boolean> invokeClient(SecureEndpoint e, Role role) {
     List<Boolean> results = new ArrayList<Boolean>(3);
     if(role == Role.A) {
-      log.info("Invoking a(). Expecting success.");
+      log.debug("Invoking a(). Expecting success.");
       try {
         e.a();
-        log.info("Success");
+        log.debug("Success");
         results.add(Boolean.TRUE);
       } catch(Exception ex) {
-        log.error("Fail");
+        log.error("Unexpected Failure");
         results.add(Boolean.FALSE);
       }
-      log.info("Invoking b(). Expecting failure.");
+      log.debug("Invoking b(). Expecting failure.");
       try {
         e.b();
-        log.error("Success");
+        log.error("Unexpected Success");
         results.add(Boolean.TRUE);
       } catch(Exception ex) {
-        log.info("Fail");
+        log.debug("Failure");
         results.add(Boolean.FALSE);
       }
-      log.info("Invoking c(). Expecting success.");
+      log.debug("Invoking c(). Expecting success.");
       try {
         e.c();
-        log.info("Success");
+        log.debug("Success");
         results.add(Boolean.TRUE);
       } catch(Exception ex) {
-        log.error("Fail");
+        log.error("Unexpected Failure");
         results.add(Boolean.FALSE);
       }
     } else if(role == Role.B) {
-      log.info("Invoking a(). Expecting failure.");
+      log.debug("Invoking a(). Expecting failure.");
       try {
         e.a();
-        log.error("Success");
+        log.error("Unexpected Success");
         results.add(Boolean.TRUE);
       } catch(Exception ex) {
-        log.info("Fail");
+        log.debug("Failure");
         results.add(Boolean.FALSE);
       }
-      log.info("Invoking b(). Expecting success.");
+      log.debug("Invoking b(). Expecting success.");
       try {
         e.b();
-        log.info("Success");
+        log.debug("Success");
         results.add(Boolean.TRUE);
       } catch(Exception ex) {
-        log.error("Fail");
+        log.error("Unexpected Failure");
         results.add(Boolean.FALSE);
       }
-      log.info("Invoking c(). Expecting success.");
+      log.debug("Invoking c(). Expecting success.");
       try {
         e.c();
-        log.info("Success");
+        log.debug("Success");
         results.add(Boolean.TRUE);
       } catch(Exception ex) {
-        log.error("Fail");
+        log.error("Unexpected Failure");
         results.add(Boolean.FALSE);
       }
     } else if(role == Role.NONE) {
-      log.info("Invoking a(). Expecting failure.");
+      log.debug("Invoking a(). Expecting failure.");
       try {
         e.a();
-        log.error("Success");
+        log.error("Unexpected Success");
         results.add(Boolean.TRUE);
       } catch(Exception ex) {
-        log.info("Fail");
+        log.debug("Failure");
         results.add(Boolean.FALSE);
       }
-      log.info("Invoking b(). Expecting failure.");
+      log.debug("Invoking b(). Expecting failure.");
       try {
         e.b();
-        log.error("Success");
+        log.error("Unexpected Success");
         results.add(Boolean.TRUE);
       } catch(Exception ex) {
-        log.info("Fail");
+        log.debug("Failure");
         results.add(Boolean.FALSE);
       }
-      log.info("Invoking c(). Expecting success.");
+      log.debug("Invoking c(). Expecting success.");
       try {
         e.c();
-        log.info("Success");
+        log.debug("Success");
         results.add(Boolean.TRUE);
       } catch(Exception ex) {
-        log.error("Fail");
+        log.error("Unexpected Failure");
         results.add(Boolean.FALSE);
       }
     }
