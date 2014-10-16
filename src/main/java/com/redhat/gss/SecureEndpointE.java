@@ -2,6 +2,7 @@ package com.redhat.gss;
 
 import javax.ejb.Stateless;
 import javax.ejb.Remote;
+import javax.ejb.Local;
 import javax.jws.WebService;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
@@ -10,7 +11,8 @@ import org.jboss.ejb3.annotation.SecurityDomain;
 import javax.annotation.security.DeclareRoles;
 
 @Stateless
-@Remote(SecureEndpoint.class)
+// @Remote(SecureEndpoint.class)
+@Local(SecureEndpoint.class)
 @WebService(endpointInterface="com.redhat.gss.SecureEndpoint")
 @SecurityDomain("other")
 // @DeclareRoles({"a","b"})

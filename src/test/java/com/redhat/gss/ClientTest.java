@@ -1,6 +1,5 @@
 package com.redhat.gss;
 
-import java.lang.Exception; //HUH?!? why is this necessary?!?
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -13,18 +12,27 @@ import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Service;
 
-import org.jboss.ejb.client.ContextSelector;
-import org.jboss.ejb.client.EJBClientConfiguration;
-import org.jboss.ejb.client.EJBClientContext;
-import org.jboss.ejb.client.PropertiesBasedEJBClientConfiguration;
-import org.jboss.ejb.client.remoting.ConfigBasedEJBClientContextSelector;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.logging.Logger;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.asset.UrlAsset;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 
-public class Client {
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+
+@RunWith(Arquillian.class)
+public class ClientTest {
 
   private static final String[] endpoints = {"a","b","c","d","e"};
   // private static final String[] endpoints = {"e"};
-  public Logger log = Logger.getLogger("com.redhat.gss.Client");
+  private static Logger log = Logger.getLogger("com.redhat.gss.ClientTest");
   private InitialContext ctx = null;
 
   public enum Role {
@@ -41,22 +49,38 @@ public class Client {
     }
   }
 
+  @Deployment
+  public static JavaArchive createDeployment() {
+    return ShrinkWrap.create(JavaArchive.class, "endpoint.jar")
+      .addClass(SecureEndpoint.class)
+      .addClass(SecureEndpointA.class)
+      .addClass(SecureEndpointB.class)
+      .addClass(SecureEndpointC.class)
+      .addClass(SecureEndpointD.class)
+      .addClass(SecureEndpointE.class)
+      .add(new UrlAsset(ClientTest.class.getResource("/jboss-deployment-structure.xml")), "/META-INF/jboss-deployment-structure.xml");
+  }
+
   public static void main(String[] args) throws Exception {
     System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
     System.setProperty("logging.configuration", "file:/home/remote/klape/work/dev/maven-projects/method-level-auth-tests/logging.properties");
-    Client client = new Client();
+    new ClientTest().test();
+  }
+
+  @Test
+  public void test() throws Exception {
     List<Boolean> wsResults = new ArrayList<Boolean>();
     List<Boolean> ejbResults = new ArrayList<Boolean>();
     for(String endpoint : endpoints) {
-      wsResults.addAll(client.invokeWebservice(endpoint));
+      wsResults.addAll(invokeWebservice(endpoint));
     }
     for(String endpoint : endpoints) {
-      ejbResults.addAll(client.invokeEjb(endpoint));
+      ejbResults.addAll(invokeEjb(endpoint));
     }
-    printResults(wsResults, ejbResults, client.log);
+    printResults(wsResults, ejbResults);
   }
 
-  public static void printResults(List<Boolean> wsResults, List<Boolean> ejbResults, Logger log) {
+  public void printResults(List<Boolean> wsResults, List<Boolean> ejbResults) {
     StringBuffer endpointLine = new StringBuffer();
     StringBuffer roleLine = new StringBuffer();
     StringBuffer methodLine = new StringBuffer();
@@ -105,7 +129,7 @@ public class Client {
       log.debug("================================================================================");
       ((BindingProvider)port).getRequestContext().put(BindingProvider.USERNAME_PROPERTY, role.getUser());
       ((BindingProvider)port).getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, "RedHat13#");
-      results.addAll(invokeClient(port, role, "b".equals(endpoint) ? false : true));
+      results.addAll(invokeClient(port, role, endpoint, "b".equals(endpoint) ? false : true));
     }
     return results;
   }
@@ -113,121 +137,131 @@ public class Client {
   public List<Boolean> invokeEjb(String endpoint) throws Exception {
     List<Boolean> results = new ArrayList<Boolean>();
     for(Role role : Role.class.getEnumConstants()) {
-      Properties p = new Properties();
-      p.put("remote.connections", "default");
-      p.put("remote.connection.default.host", "localhost");
-      p.put("remote.connection.default.port", "4447");
-      p.put("remote.connectionprovider.create.options.org.xnio.Options.SSL_ENABLED", "false");
-      p.put("remote.connection.default.connect.options.org.xnio.Options.SASL_POLICY_NOANONYMOUS", "false");
-      // p.put("remote.connection.default.connect.options.org.xnio.Options.SASL_POLICY_NOPLAINTEXT", "false");
-      p.put("remote.connection.default.username", role.getUser());
-      p.put("remote.connection.default.password", "RedHat13#");
-      Hashtable<String, String> env = new Hashtable<String, String>();
-      env.put(Context.URL_PKG_PREFIXES, "org.jboss.ejb.client.naming");
-
-      EJBClientConfiguration cc = new PropertiesBasedEJBClientConfiguration(p);
-      ContextSelector<EJBClientContext> selector = new ConfigBasedEJBClientContextSelector(cc);
-      EJBClientContext.setSelector(selector);
-      InitialContext ctx = new InitialContext(env);
-
       log.debug("================================================================================");
       log.debug("Invoking EJB " + endpoint.toUpperCase() + " with " + role.getUser());
       log.debug("================================================================================");
-      Object obj = ctx.lookup("ejb:/endpoint//SecureEndpoint" + endpoint.toUpperCase() + "!com.redhat.gss.SecureEndpoint");
-      SecureEndpoint ejbObject = (SecureEndpoint) obj;
-      results.addAll(invokeClient(ejbObject, role, "b".equals(endpoint) ? false : true));
-      ctx.close();
+
+      InitialContext ctx = null;
+      try {
+        ctx = new InitialContext();
+        Object obj = ctx.lookup("java:global/endpoint/SecureEndpoint" + endpoint.toUpperCase() + "!com.redhat.gss.SecureEndpoint");
+        SecureEndpoint ejbObject = (SecureEndpoint) obj;
+        results.addAll(invokeClient(ejbObject, role, endpoint, "b".equals(endpoint) ? false : true));
+      } finally {
+        try {
+          ctx.close();
+        } catch(Exception e) {
+        }
+      }
     }
     return results;
   }
 
-  public List<Boolean> invokeClient(SecureEndpoint e, Role role, boolean noRoleAllowed) {
+  public List<Boolean> invokeClient(SecureEndpoint e, Role role, String endpointName, boolean noRoleAllowed) {
     List<Boolean> results = new ArrayList<Boolean>(3);
+    Boolean result = null;
     if(role == Role.A) {
       log.debug("Invoking a(). Expecting success.");
       try {
         e.a();
         log.debug("Success");
-        results.add(Boolean.TRUE);
+        result = Boolean.TRUE;
       } catch(Exception ex) {
         log.error("Unexpected Failure");
-        results.add(Boolean.FALSE);
+        result = Boolean.FALSE;
+        ex.printStackTrace();
       }
+      assertTrue("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".a() with role " + role, result.booleanValue());
+      results.add(result);
       log.debug("Invoking b(). Expecting failure.");
       try {
         e.b();
         log.error("Unexpected Success");
-        results.add(Boolean.TRUE);
+        result = Boolean.TRUE;
       } catch(Exception ex) {
         log.debug("Failure");
-        results.add(Boolean.FALSE);
+        result = Boolean.FALSE;
       }
-      invokeMethodC(e, results, noRoleAllowed);
+      assertFalse("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".b() with role " + role, result.booleanValue());
+      results.add(result);
+      invokeMethodC(e, results, endpointName, role, noRoleAllowed);
     } else if(role == Role.B) {
       log.debug("Invoking a(). Expecting failure.");
       try {
         e.a();
         log.error("Unexpected Success");
-        results.add(Boolean.TRUE);
+        result = Boolean.TRUE;
       } catch(Exception ex) {
         log.debug("Failure");
-        results.add(Boolean.FALSE);
+        result = Boolean.FALSE;
       }
+      assertFalse("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".a() with role " + role, result.booleanValue());
+      results.add(result);
       log.debug("Invoking b(). Expecting success.");
       try {
         e.b();
         log.debug("Success");
-        results.add(Boolean.TRUE);
+        result = Boolean.TRUE;
       } catch(Exception ex) {
         log.error("Unexpected Failure");
-        results.add(Boolean.FALSE);
+        result = Boolean.FALSE;
       }
-      invokeMethodC(e, results, noRoleAllowed);
+      assertTrue("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".b() with role " + role, result.booleanValue());
+      results.add(result);
+      invokeMethodC(e, results, endpointName, role, noRoleAllowed);
     } else if(role == Role.NONE) {
       log.debug("Invoking a(). Expecting failure.");
       try {
         e.a();
         log.error("Unexpected Success");
-        results.add(Boolean.TRUE);
+        result = Boolean.TRUE;
       } catch(Exception ex) {
         log.debug("Failure");
-        results.add(Boolean.FALSE);
+        result = Boolean.FALSE;
       }
+      assertFalse("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".a() with role " + role, result.booleanValue());
+      results.add(result);
       log.debug("Invoking b(). Expecting failure.");
       try {
         e.b();
         log.error("Unexpected Success");
-        results.add(Boolean.TRUE);
+        result = Boolean.TRUE;
       } catch(Exception ex) {
         log.debug("Failure");
-        results.add(Boolean.FALSE);
+        result = Boolean.FALSE;
       }
-      invokeMethodC(e, results, noRoleAllowed);
+      assertFalse("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".b() with role " + role, result.booleanValue());
+      results.add(result);
+      invokeMethodC(e, results, endpointName, role, noRoleAllowed);
     }
     return results;
   }
 
-  public void invokeMethodC(SecureEndpoint e, List<Boolean> results, boolean noRoleAllowed) {
+  public void invokeMethodC(SecureEndpoint e, List<Boolean> results, String endpointName, Role role, boolean noRoleAllowed) {
+    Boolean result = null;
     if(noRoleAllowed) {
       log.debug("Invoking c(). Expecting success.");
       try {
         e.c();
         log.debug("Success");
-        results.add(Boolean.TRUE);
+        result = Boolean.TRUE;
       } catch(Exception ex) {
         log.error("Unexpected Failure");
-        results.add(Boolean.FALSE);
+        result = Boolean.FALSE;
       }
+      assertTrue("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".c() with role " + role, result.booleanValue());
     } else {
       log.debug("Invoking c(). Expecting failure.");
       try {
         e.c();
         log.error("Unexpected Success");
-        results.add(Boolean.TRUE);
+        result = Boolean.TRUE;
       } catch(Exception ex) {
         log.debug("Failure");
-        results.add(Boolean.FALSE);
+        result = Boolean.FALSE;
       }
+      assertFalse("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".c() with role " + role, result.booleanValue());
     }
+    results.add(result);
   }
 }
