@@ -20,12 +20,12 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.asset.UrlAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ErrorCollector;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
+import static org.hamcrest.CoreMatchers.*;
 
 @RunWith(Arquillian.class)
 public class ClientTest {
@@ -34,6 +34,9 @@ public class ClientTest {
   // private static final String[] endpoints = {"e"};
   private static Logger log = Logger.getLogger("com.redhat.gss.ClientTest");
   private InitialContext ctx = null;
+
+  @Rule
+  public ErrorCollector collector = new ErrorCollector();
 
   public enum Role {
     A("UserA"), B("UserB"), NONE("UserC");
@@ -144,7 +147,7 @@ public class ClientTest {
       InitialContext ctx = null;
       try {
         ctx = new InitialContext();
-        Object obj = ctx.lookup("java:global/endpoint/SecureEndpoint" + endpoint.toUpperCase() + "!com.redhat.gss.SecureEndpoint");
+        Object obj = ctx.lookup("java:global/test/SecureEndpoint" + endpoint.toUpperCase() + "!com.redhat.gss.SecureEndpoint");
         SecureEndpoint ejbObject = (SecureEndpoint) obj;
         results.addAll(invokeClient(ejbObject, role, endpoint, "b".equals(endpoint) ? false : true));
       } finally {
@@ -171,7 +174,8 @@ public class ClientTest {
         result = Boolean.FALSE;
         ex.printStackTrace();
       }
-      assertTrue("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".a() with role " + role, result.booleanValue());
+      collector.checkThat("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".a() with role " + role, 
+        result.booleanValue(), is(Boolean.TRUE));
       results.add(result);
       log.debug("Invoking b(). Expecting failure.");
       try {
@@ -182,7 +186,8 @@ public class ClientTest {
         log.debug("Failure");
         result = Boolean.FALSE;
       }
-      assertFalse("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".b() with role " + role, result.booleanValue());
+      collector.checkThat("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".b() with role " + role, 
+        result.booleanValue(), is(Boolean.FALSE));
       results.add(result);
       invokeMethodC(e, results, endpointName, role, noRoleAllowed);
     } else if(role == Role.B) {
@@ -195,7 +200,8 @@ public class ClientTest {
         log.debug("Failure");
         result = Boolean.FALSE;
       }
-      assertFalse("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".a() with role " + role, result.booleanValue());
+      collector.checkThat("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".a() with role " + role, 
+        result, is(Boolean.FALSE));
       results.add(result);
       log.debug("Invoking b(). Expecting success.");
       try {
@@ -206,7 +212,8 @@ public class ClientTest {
         log.error("Unexpected Failure");
         result = Boolean.FALSE;
       }
-      assertTrue("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".b() with role " + role, result.booleanValue());
+      collector.checkThat("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".b() with role " + role, 
+        result, is(Boolean.TRUE));
       results.add(result);
       invokeMethodC(e, results, endpointName, role, noRoleAllowed);
     } else if(role == Role.NONE) {
@@ -219,7 +226,8 @@ public class ClientTest {
         log.debug("Failure");
         result = Boolean.FALSE;
       }
-      assertFalse("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".a() with role " + role, result.booleanValue());
+      collector.checkThat("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".a() with role " + role, 
+        result, is(Boolean.FALSE));
       results.add(result);
       log.debug("Invoking b(). Expecting failure.");
       try {
@@ -230,7 +238,8 @@ public class ClientTest {
         log.debug("Failure");
         result = Boolean.FALSE;
       }
-      assertFalse("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".b() with role " + role, result.booleanValue());
+      collector.checkThat("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".b() with role " + role, 
+        result, is(Boolean.FALSE));
       results.add(result);
       invokeMethodC(e, results, endpointName, role, noRoleAllowed);
     }
@@ -249,7 +258,8 @@ public class ClientTest {
         log.error("Unexpected Failure");
         result = Boolean.FALSE;
       }
-      assertTrue("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".c() with role " + role, result.booleanValue());
+      collector.checkThat("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".c() with role " + role, 
+        result, is(Boolean.TRUE));
     } else {
       log.debug("Invoking c(). Expecting failure.");
       try {
@@ -260,7 +270,8 @@ public class ClientTest {
         log.debug("Failure");
         result = Boolean.FALSE;
       }
-      assertFalse("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".c() with role " + role, result.booleanValue());
+      collector.checkThat("Unexpected result \"" + result + "\" when invoking SecureEndpoint" + endpointName.toUpperCase() + ".c() with role " + role, 
+        result, is(Boolean.FALSE));
     }
     results.add(result);
   }

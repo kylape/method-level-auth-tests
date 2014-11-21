@@ -20,11 +20,11 @@
         <scope>import</scope>
       </dependency>
       <dependency>
-        <groupId>org.jboss.arquillian</groupId>
-        <artifactId>arquillian-bom</artifactId>
-        <version>1.1.5.Final</version>
-        <scope>import</scope>
+        <groupId>org.jboss.bom.eap</groupId>
+        <artifactId>jboss-javaee-6.0-with-tools</artifactId>
+        <version>${version.eap6}</version>
         <type>pom</type>
+        <scope>import</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -60,15 +60,20 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+        <groupId>org.jboss.arquillian.protocol</groupId>
+        <artifactId>arquillian-protocol-servlet</artifactId>
+        <scope>test</scope>               
+    </dependency>
+    <dependency>
       <groupId>org.jboss.as</groupId>
       <artifactId>jboss-as-arquillian-container-remote</artifactId>
-      <version>7.4.0.Final-redhat-SNAPSHOT</version>
+      <!-- <version>7.4.0.Final-redhat-SNAPSHOT</version> -->
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.8.1</version>
+      <version>4.11</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
